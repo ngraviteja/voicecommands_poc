@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Camera with Voice Command</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        #camera {
+            display: none;
+            margin-top: 20px;
+        }
+        #instructions {
+            font-size: 18px;
+            color: #333;
+        }
+        #video {
+            width: 80%;
+            max-width: 600px;
+            border: 2px solid #444;
+        }
+    </style>
+</head>
+<body>
+    <h1>Voice Command Camera</h1>
+    <p id="instructions">Say "open camera" to start the camera.</p>
+    <video id="video" autoplay></video>
+
+    <script>
+        // Voice Recognition Setup
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+
+        // Camera elements
+        const video = document.getElementById('video');
+
+        // Start listening for voice commands
+        recognition.start();
+
+        recognition.onresult = (event) => {
+            const command = event.results[0][0].transcript.toLowerCase();
+            console.log('Command:', command);
+
+            if (command === 'open camera') {
+                openCamera();
+            } else {
+                alert('Unrecognized command. Try saying "open camera".');
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            alert('Speech recognition error. Please try again.');
+        };
+
+        // Function to open the camera
+        function openCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then((stream) => {
+                    video.srcObject = stream;
+                    video.style.display = 'block';
+                })
+                .catch((err) => {
+                    console.error('Error accessing the camera:', err);
+                    alert('Could not access the camera. Please check permissions.');
+                });
+        }
+
+        // Restart recognition when it ends
+        recognition.onend = () => recognition.start();
+    </script>
+</body>
+</html>
