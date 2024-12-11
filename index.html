@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,36 +13,59 @@
             padding: 20px;
             background-color: #f4f4f4;
         }
+
         #camera {
             display: none;
             margin-top: 20px;
         }
+
         #instructions {
             font-size: 18px;
             color: #333;
         }
+
         #video {
             width: 80%;
             max-width: 600px;
             border: 2px solid #444;
         }
+
         #captured {
             margin-top: 20px;
         }
+
         #photo {
             width: 80%;
             max-width: 600px;
             border: 2px solid #888;
         }
+
+        #download {
+            display: none;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #download:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
+
 <body>
     <h1>Voice Command Camera</h1>
-    <p id="instructions">Say "open camera" to start the camera, "close camera" to stop it, or "click picture" to take a photo.</p>
+    <p id="instructions">Say "open camera" to start the camera, "close camera" to stop it, "click picture" to take a
+        photo, or "save picture" to download the photo.</p>
     <video id="video" autoplay></video>
     <canvas id="canvas" style="display:none;"></canvas>
     <div id="captured">
         <img id="photo" alt="Captured Photo" />
+        <a id="download" download="captured_photo.png">Download Photo</a>
     </div>
 
     <script>
@@ -49,18 +73,27 @@
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         recognition.lang = 'en-US';
         recognition.interimResults = false;
+        recognition.continuous = true;
 
         // Camera elements
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const photo = document.getElementById('photo');
+        const downloadLink = document.getElementById('download');
         let mediaStream = null;
 
-        // Start listening for voice commands
-        recognition.start();
+        // Start recognition
+        function startRecognition() {
+            try {
+                recognition.start();
+            } catch (err) {
+                console.warn('Recognition already running:', err);
+            }
+        }
 
         recognition.onresult = (event) => {
-            const command = event.results[0][0].transcript.toLowerCase();
+            const length = event.results.length - 1;
+            let command = event.results[length][0].transcript.toLowerCase().trim();
             console.log('Command:', command);
 
             if (command === 'open camera') {
@@ -69,39 +102,62 @@
                 closeCamera();
             } else if (command === 'click picture') {
                 clickPicture();
+            } else if (command === 'save picture') {
+                downloadPicture();
             } else {
-                alert('Unrecognized command. Try saying "open camera", "close camera", or "click picture".');
+                alert('Unrecognized command. Try saying "open camera", "close camera", "click picture", or "save picture".');
             }
+
+            // Restart recognition after processing
+            setTimeout(() => {
+                startRecognition();
+            }, 500); // Small delay to prevent overlaps
+        };
+
+        recognition.onend = () => {
+            console.log('Recognition ended. Restarting...');
+            setTimeout(() => {
+                startRecognition();
+            }, 500); // Ensure no conflicts
         };
 
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            alert('Speech recognition error. Please try again.');
+            if (event.error === 'no-speech' || event.error === 'aborted') {
+                setTimeout(() => {
+                    startRecognition();
+                }, 500);
+            } else {
+                alert('An error occurred. Please reload the page and try again.');
+            }
         };
+
+        // Start listening for voice commands
+        recognition.start();
 
         // Function to open the camera
         function openCamera() {
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then((stream) => {
-                    mediaStream = stream;
-                    video.srcObject = stream;
-                    video.style.display = 'block';
-                })
-                .catch((err) => {
-                    console.error('Error accessing the camera:', err);
-                    alert('Could not access the camera. Please check permissions.');
-                });
+            if (!mediaStream) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then((stream) => {
+                        mediaStream = stream;
+                        video.srcObject = stream;
+                        video.style.display = 'block';
+                    })
+                    .catch((err) => {
+                        console.error('Error accessing the camera:', err);
+                        alert('Could not access the camera. Please check permissions.');
+                    });
+            } else {
+                video.style.display = 'block'; // If stream already exists, just show the video
+            }
         }
 
         // Function to close the camera
         function closeCamera() {
             if (mediaStream) {
-                const tracks = mediaStream.getTracks();
-                tracks.forEach(track => track.stop());
-                mediaStream = null;
+                video.style.display = 'none'; // Hide video but keep the stream
             }
-            video.style.display = 'none';
-            video.srcObject = null;
         }
 
         // Function to click a picture
@@ -118,10 +174,22 @@
             // Convert canvas to an image and display it
             const imageData = canvas.toDataURL('image/png');
             photo.src = imageData;
+
+            // Create a downloadable link
+            downloadLink.href = imageData;
+            downloadLink.style.display = 'inline-block';
         }
 
-        // Restart recognition when it ends
-        recognition.onend = () => recognition.start();
+        function downloadPicture() {
+            if (!downloadLink.href) {
+                alert('No picture to download. Say "click picture" first.');
+                return;
+            }
+            downloadLink.click(); // Simulates a click on the download link
+        }
+
+        recognition.onend();
     </script>
 </body>
+
 </html>
