@@ -55,7 +55,7 @@
             background-color: #0056b3;
         }
 
-        #open-camera {
+        #open-camera, #click-picture, #upload {
             margin: 20px;
         }
     </style>
@@ -66,7 +66,9 @@
     <p id="instructions">Say "open camera" to start the camera, "close camera" to stop it, "click picture" to take a
         photo, "save picture" to download the photo or "upload to server" to upload</p>
     <div>
-        <button id="open-camera" type="button" onclick="openCamera()" title="hf_use_description">Open Camera</button>
+        <button id="open-camera" type="button" onclick="openCamera()" title="hf_show_text | hf_use_description">Open Camera</button>
+        <button id="click-picture" type="button" onclick="clickPicture()" title="hf_show_text | hf_use_description">Click Picture</button>
+        <button id="upload" type="button" onclick="uploadPictureToApi()" title="hf_show_text | hf_use_description">Upload Picture</button>
     </div>
     <video id="video" autoplay></video>
     <canvas id="canvas" style="display:none;"></canvas>
