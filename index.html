@@ -60,7 +60,7 @@
 <body>
     <h1>Voice Command Camera</h1>
     <p id="instructions">Say "open camera" to start the camera, "close camera" to stop it, "click picture" to take a
-        photo, or "save picture" to download the photo.</p>
+        photo, "save picture" to download the photo or "upload to server" to upload</p>
     <video id="video" autoplay></video>
     <canvas id="canvas" style="display:none;"></canvas>
     <div id="captured">
@@ -104,7 +104,10 @@
                 clickPicture();
             } else if (command === 'save picture') {
                 downloadPicture();
-            } else {
+            } else if (command === 'upload to server') {
+                uploadPictureToApi();
+            }
+            else {
                 alert('Unrecognized command. Try saying "open camera", "close camera", "click picture", or "save picture".');
             }
 
@@ -160,6 +163,7 @@
             }
         }
 
+        let lastClickedPicture = null;
         // Function to click a picture
         function clickPicture() {
             if (!mediaStream) {
@@ -175,10 +179,27 @@
             const imageData = canvas.toDataURL('image/png');
             photo.src = imageData;
 
+            // Convert base64 to blob and store it as the last clicked picture
+            lastClickedPicture = dataURLtoBlob(imageData);
+
             // Create a downloadable link
             downloadLink.href = imageData;
             downloadLink.style.display = 'inline-block';
         }
+
+// Convert Base64 dataURL to Blob
+function dataURLtoBlob(dataURL) {
+    const byteString = atob(dataURL.split(',')[1]);
+    const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+    const buffer = new ArrayBuffer(byteString.length);
+    const uintArray = new Uint8Array(buffer);
+
+    for (let i = 0; i < byteString.length; i++) {
+        uintArray[i] = byteString.charCodeAt(i);
+    }
+
+    return new Blob([buffer], { type: mimeString });
+}
 
         function downloadPicture() {
             if (!downloadLink.href) {
@@ -186,6 +207,36 @@
                 return;
             }
             downloadLink.click(); // Simulates a click on the download link
+        }
+
+        // Function to upload the picture to the server
+        function uploadPictureToApi() {
+            if (!lastClickedPicture) {
+                alert('No picture has been clicked. Please click a picture first.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', lastClickedPicture, 'captured_image.png');
+
+            fetch('http://localhost:3000/upload', {
+                method: 'POST',
+                body: formData,
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('Failed to upload picture. Please try again.');
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    alert('Picture uploaded successfully!');
+                    console.log('Server Response:', data);
+                })
+                .catch((error) => {
+                    console.error('Error uploading picture:', error);
+                    alert('Error uploading picture. Check the console for details.');
+                });
         }
 
         recognition.onend();
