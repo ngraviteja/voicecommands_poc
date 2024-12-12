@@ -54,6 +54,11 @@
         #download:hover {
             background-color: #0056b3;
         }
+
+        button {
+            display: block;
+            margin: 20px;
+        }
     </style>
 </head>
 
@@ -61,6 +66,7 @@
     <h1>Voice Command Camera</h1>
     <p id="instructions">Say "open camera" to start the camera, "close camera" to stop it, "click picture" to take a
         photo, "save picture" to download the photo or "upload to server" to upload</p>
+    <button type="button" onclick="openCamera()" title="hf_use_description">Open Camera</button>
     <video id="video" autoplay></video>
     <canvas id="canvas" style="display:none;"></canvas>
     <div id="captured">
